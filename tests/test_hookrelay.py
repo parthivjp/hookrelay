@@ -5,7 +5,7 @@ import httpx
 
 from app.config import settings
 from app.delivery import attempt_delivery, claim_delivery, compute_backoff, find_due_delivery_ids
-from app.models import Delivery, utcnow
+from app.models import Delivery, Endpoint, utcnow
 from app.security import build_signature_header, verify_signature
 
 
@@ -246,6 +246,20 @@ def test_disabled_endpoint_sends_nothing(client, db, monkeypatch):
     client.post("/events", json={"event_type": "x", "payload": {}})
     client.patch(f"/endpoints/{endpoint['id']}", json={"active": False})
     delivery_id = db.query(Delivery).one().id
+
+    calls = []
+    patch_http(monkeypatch, 200, calls=calls)
+    assert attempt_delivery(db, delivery_id) == "dead"
+    assert calls == []
+
+
+def test_deleted_endpoint_stops_a_stale_delivery(client, db, monkeypatch):
+    endpoint = make_endpoint(client)
+    client.post("/events", json={"event_type": "x", "payload": {}})
+    delivery_id = db.query(Delivery).one().id
+
+    db.delete(db.get(Endpoint, endpoint["id"]))
+    db.commit()
 
     calls = []
     patch_http(monkeypatch, 200, calls=calls)

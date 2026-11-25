@@ -83,6 +83,13 @@ def attempt_delivery(db: Session, delivery_id: int) -> str:
     event = db.get(Event, delivery.event_id)
     endpoint = db.get(Endpoint, delivery.endpoint_id)
 
+    if endpoint is None:
+        delivery.status = "dead"
+        delivery.last_error = "Endpoint not found"
+        delivery.locked_until = None
+        db.commit()
+        return "dead"
+
     if not endpoint.active:
         delivery.status = "dead"
         delivery.last_error = "Endpoint is disabled"

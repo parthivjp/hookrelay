@@ -49,6 +49,30 @@ You need Docker.
 docker compose up --build
 ```
 
+### Run locally on Windows without Docker
+
+```powershell
+py -3.14 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+$env:DATABASE_URL = "sqlite:///./hookrelay.db"
+$env:CACHE_ENABLED = "false"
+$env:API_KEY = "dev-key"
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+In separate terminals, start the demo receiver and local delivery worker:
+
+```powershell
+$env:WEBHOOK_SECRET = "whsec_demo"
+$env:FAIL_RATE = "0"
+.\.venv\Scripts\python.exe -m uvicorn demo_receiver.main:app --host 127.0.0.1 --port 9000
+```
+
+```powershell
+$env:DATABASE_URL = "sqlite:///./hookrelay.db"
+.\.venv\Scripts\python.exe -m app.local_worker
+```
+
 - API docs (try everything in the browser): http://localhost:8000/docs
 - API key: `dev-key` (send it as the `X-API-Key` header)
 

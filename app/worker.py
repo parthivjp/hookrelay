@@ -8,6 +8,12 @@ celery_app = Celery("hookrelay", broker=settings.redis_url, backend=settings.red
 celery_app.conf.update(
     task_acks_late=True,              # if a worker dies mid-task, the message is not lost
     worker_prefetch_multiplier=1,     # one job at a time, fair sharing between workers
+    broker_connection_timeout=1,
+    broker_connection_retry=False,
+    broker_transport_options={
+        "socket_connect_timeout": 1,
+        "socket_timeout": 1,
+    },
     timezone="UTC",
     beat_schedule={
         "sweep-due-deliveries": {
